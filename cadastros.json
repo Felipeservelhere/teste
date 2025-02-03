@@ -1,0 +1,167 @@
+{
+    "produtos": [
+        {
+            "descricao": "VIGA",
+            "largura": 12,
+            "espessura": 8,
+            "madeira": "GARAPA",
+            "un_com": "UNIDADE",
+            "vl_m": 4000.0,
+            "valor_venda": 53.0,
+            "porcentagem_lucro": 38.020833333333336
+        }
+    ],
+    "clientes": [
+        {
+            "name": "FELIPE SERVELHERE",
+            "cpf": "07776143910",
+            "phone": "44998205264",
+            "address": "RUA BAHIA, 204",
+            "movements": [
+                {}
+            ],
+            "movimentos": []
+        },
+        {
+            "name": "EVERSON OLSEN",
+            "cpf": "09878675410",
+            "phone": "44998205260",
+            "address": "RUA SAO PAULO, 098",
+            "movements": [
+                {}
+            ],
+            "movimentos": []
+        },
+        {
+            "name": "PEDRO KREIN",
+            "cpf": "09876547654",
+            "phone": "44997654389",
+            "address": "RUA SEM TERRA",
+            "movements": [
+                {}
+            ],
+            "movimentos": []
+        },
+        {
+            "name": "LIVIA SERVELHERE",
+            "cpf": "98765439810",
+            "phone": "44998654321",
+            "address": "RUA BAHIA 204",
+            "movements": []
+        },
+        {
+            "name": "CLEUZA OLSEN",
+            "cpf": "56743980764",
+            "phone": "4498764532",
+            "address": "RUA RIO DE JANEIRO, 204",
+            "movements": []
+        }
+    ],
+    "estoque": [
+        {
+            "descricao": "LASCA",
+            "madeira": "EUCALIPTO",
+            "tamanho": 2.2,
+            "un_com": "UNIDADE",
+            "quantidade": 50,
+            "tipo": "Dz/Unid",
+            "duzia": 4
+        }
+    ],
+    "relatorios": [
+        {},
+        {
+            "produto": "VIGA - 8.0 X 16.0 - GARAPA 5m",
+            "quantidade": 4,
+            "valor_total": 1600.0,
+            "lucro_total": 320.0,
+            "cliente": "FELIPE SERVELHERE",
+            "data": "29/01/2025",
+            "volume_total": 0.064
+        },
+        {
+            "produto": "LASCA - 2.2M",
+            "quantidade": 4,
+            "valor_total": 2400.0,
+            "lucro_total": 300.0,
+            "cliente": "N/A",
+            "data": "29/01/2025",
+            "volume_total": 0
+        },
+        {
+            "produto": "Prego - 17x27",
+            "quantidade": 4,
+            "valor_total": 72,
+            "lucro_total": 12,
+            "cliente": "N/A",
+            "data": "29/01/2025",
+            "volume_total": 0
+        },
+        {
+            "produto": "LASCA - 2.2M",
+            "quantidade": 3,
+            "valor_total": 1800.0,
+            "lucro_total": 225.0,
+            "cliente": "N/A",
+            "data": "29/01/2025",
+            "volume_total": 0
+        },
+        {
+            "produto": "Prego - 17x27",
+            "quantidade": 3,
+            "valor_total": 54,
+            "lucro_total": 9,
+            "cliente": "N/A",
+            "data": "29/01/2025",
+            "volume_total": 0
+        },
+        {
+            "produto": "LASCA  - ITAUBA 2.2M",
+            "quantidade": 3,
+            "valor_total": 2550.0,
+            "lucro_total": 0.0,
+            "cliente": "FELIPE SERVELHERE",
+            "data": "29/01/2025",
+            "volume_total": 0
+        },
+        {
+            "produto": "LASCA  - ITAUBA 2.2M",
+            "quantidade": 3,
+            "valor_total": 2550.0,
+            "lucro_total": 0.0,
+            "cliente": "FELIPE SERVELHERE",
+            "data": "29/01/2025",
+            "volume_total": 0
+        },
+        {
+            "produto": "LASCA - EUCALIPTO 2.2M",
+            "quantidade": 3,
+            "un_com": "DUZIA",
+            "valor_total": 1800.0,
+            "lucro_total": 225.0,
+            "cliente": "FELIPE SERVELHERE",
+            "data": "30/01/2025",
+            "volume_total": ""
+        },
+        {
+            "produto": "LASCA - EUCALIPTO 2.2M",
+            "quantidade": 6,
+            "un_com": "UNIDADE",
+            "valor_total": 300.0,
+            "lucro_total": 37.5,
+            "cliente": "FELIPE SERVELHERE",
+            "data": "30/01/2025",
+            "volume_total": ""
+        },
+        {
+            "produto": "VIGA - 8X12 - GARAPA 3M",
+            "quantidade": 3,
+            "un_com": "UNIDADE",
+            "valor_total": 495.0,
+            "lucro_total": 149.4,
+            "cliente": "FELIPE SERVELHERE",
+            "data": "01/02/2025",
+            "volume_total": "0.0864"
+        }
+    ]
+}

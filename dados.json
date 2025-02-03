@@ -1,0 +1,38 @@
+{
+    "produtos": [
+        {
+            "descricao": "VIGA",
+            "madeira": "GARAPA",
+            "largura": 8.0,
+            "espessura": 12.0
+        }
+    ],
+    "clientes": [
+        {
+            "nome": "FELIPE",
+            "cpf_cnpj": "07776143910",
+            "endereco": "RUA BAHIA 204",
+            "cidade": "XAMBR\u00ca",
+            "telefone": "44998205264"
+        }
+    ],
+    "orcamento_produtos": [
+        {
+            "descricao": "VIGA - 8.0 X 12.0 - GARAPA",
+            "tamanho": 3.0,
+            "quantidade": 3,
+            "vl_m": 53.0,
+            "total": 477.0,
+            "lucro": 472.4208
+        }
+    ],
+    "vendas": [
+        {
+            "descricao": "VIGA - 8.0 X 12.0 - GARAPA",
+            "tamanho": 3.0,
+            "quantidade": 3,
+            "total": 477.0,
+            "cliente": "FELIPE"
+        }
+    ]
+}

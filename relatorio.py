@@ -969,7 +969,13 @@ class NotesTab(ttk.Frame):
         ttk.Label(self.duzia_frame, text="Selecione o Produto:").grid(row=0, column=0, padx=5, pady=5)
         self.product_combobox = ttk.Combobox(self.duzia_frame, values=[f"{p['descricao']} - {p['madeira']}" for p in products if p['un_com'] == "DUZIA"])
         self.product_combobox.grid(row=0, column=1, padx=5, pady=5)
-        self.product_combobox.current(0)  # Set default selection
+
+        # Check if there are products to select
+        if products:
+            self.product_combobox.current(0)  # Set default selection
+        else:
+            self.product_combobox.set("Nenhum produto disponível")  # Set a placeholder if no products
+
         self.size_entry = ttk.Entry(self.duzia_frame)
         self.size_entry.insert(0, "2.2")  # Pre-fill size
         self.size_entry.grid(row=0, column=2, padx=5, pady=5)
@@ -1055,7 +1061,10 @@ class NotesTab(ttk.Frame):
 
         self.product_combobox = ttk.Combobox(self.item_frame, values=product_descriptions)
         self.product_combobox.grid(row=0, column=1, padx=5, pady=5)
-        self.product_combobox.current(0)  # Set default selection
+        if product_descriptions:
+            self.product_combobox.current(0)  # Set default selection
+        else:
+            self.product_combobox.set("Nenhum produto disponível")  # Set a placeholder if no products
 
         # Quantity input
         ttk.Label(self.item_frame, text="Quantidade:").grid(row=1, column=0, padx=5, pady=5)
@@ -1197,45 +1206,45 @@ class NotesTab(ttk.Frame):
         try:
             with open('nota.json', 'r') as json_file:
                 data = json.load(json_file)
-                # Load nota_unidade
-                for item in data.get("nota_unidade", []):
-                    self.invoice_unidade_table.insert("", "end", values=(
-                        item.get("produto", "N/A"),
-                        item.get("quantidade", 0),
-                        item.get("un_com", "N/A"),
-                        item.get("vlr_m", 0.0),
-                        item.get("vlr_un", 0.0),
-                        item.get("vlr_total", 0.0),
-                        item.get("lucro_total", 0.0),
-                        item.get("volume_total", 0.0)
-                    ))
 
-                # Load nota_duzia
-                for item in data.get("nota_duzia", []):
-                    self.invoice_duzia_table.insert("", "end", values=(
-                        item.get("produto", "N/A"),
-                        item.get("quantidade", 0),
-                        item.get("un_com", "N/A"),
-                        item.get("vlr_uni", 0.0),
-                        item.get("vlr_dz", 0.0),
-                        item.get("vlr_total", 0.0),
-                        item.get("lucro_total", 0.0)
-                    ))
-                    
-                # Load nota_item
-                for item in data.get("nota_item", []):
-                    self.invoice_item_table.insert("", "end", values=(
-                        item.get("produto", "N/A"),
-                        item.get("quantidade", 0),
-                        item.get("un_com", "N/A"),
-                        item.get("vlr_uni", 0.0),
-                        item.get("vlr_total", 0.0),
-                        item.get("lucro_total", 0.0)
-                    ))    
-        except FileNotFoundError:
-            messagebox.showwarning("Aviso", "Arquivo nota.json não encontrado. Nenhum dado foi carregado.")
-        except json.JSONDecodeError:
-            messagebox.showerror("Erro", "Erro ao decodificar o arquivo JSON. Verifique o formato do arquivo.")
+            # Load nota_unidade
+            for product in data.get("nota_unidade", []):
+                self.invoice_unidade_table.insert("", "end", values=(
+                    product.get("produto", "N/A"),
+                    product.get("quantidade", 0),
+                    product.get("un_com", "N/A"),
+                    product.get("vl_m", 0.0),
+                    product.get("vlr_un", 0.0),
+                    product.get("vlr_total", 0.0),
+                    product.get("lucro_total", 0.0),
+                    product.get("volume_total", 0.0)
+                ))
+
+            # Load nota_duzia
+            for product in data.get("nota_duzia", []):
+                self.invoice_duzia_table.insert("", "end", values=(
+                    product.get("produto", "N/A"),
+                    product.get("quantidade", 0),
+                    product.get("un_com", "N/A"),
+                    product.get("vlr_uni", 0.0),
+                    product.get("vlr_dz", 0.0),
+                    product.get("vlr_total", 0.0),
+                    product.get("lucro_total", 0.0)
+                ))
+                
+            # Load nota_item
+            for product in data.get("nota_item", []):
+                self.invoice_item_table.insert("", "end", values=(
+                    product.get("produto", "N/A"),
+                    product.get("quantidade", 0),
+                    product.get("un_com", "N/A"),
+                    product.get("vlr_uni", 0.0),
+                    product.get("vlr_total", 0.0),
+                    product.get("lucro_total", 0.0)
+                ))
+
+        except (FileNotFoundError, json.JSONDecodeError):
+            messagebox.showwarning("Aviso", "Nenhum dado encontrado para carregar.")
 
     def add_product_to_invoice_duzia(self):
         selected_product = self.product_combobox.get()
@@ -1247,7 +1256,11 @@ class NotesTab(ttk.Frame):
             return
 
         # Find the product details from the products list
-        product_details = next((p for p in products if f"{p['descricao']} - {p['madeira']}" == selected_product), None)
+        product_details = next(
+            (p for p in products if 'madeira' in p and f"{p['descricao']} - {p['madeira']}" == selected_product), 
+            None
+        )
+
         if product_details:
             unit_type = self.unit_type_combobox.get()
             if unit_type == "DUZIA":
@@ -1423,38 +1436,37 @@ class NotesTab(ttk.Frame):
             # Load UNIDADE products
             for product in data.get("nota_unidade", []):
                 self.invoice_table.insert("", "end", values=(
-                    product["produto"],
-                    product["quantidade"],
-                    product["un_com"],
-                    f"R$ {product['vl_m']:.2f}",
-                    f"R$ {product['vlr_un']:.2f}",
-                    f"R$ {product['vlr_total']:.2f}",
-                    f"R$ {product['lucro_total']:.2f}",
-                    f"{product['volume_total']:.4f}"
+                    product.get("produto", "N/A"),
+                    product.get("quantidade", 0),
+                    product.get("un_com", "N/A"),
+                    product.get("vl_m", 0.0),
+                    product.get("vlr_un", 0.0),
+                    product.get("vlr_total", 0.0),
+                    product.get("lucro_total", 0.0),
+                    product.get("volume_total", 0.0)
                 ))
 
-            # Load DUZIA products
+            # Load nota_duzia
             for product in data.get("nota_duzia", []):
                 self.invoice_table.insert("", "end", values=(
-                    product["produto"],
-                    product["quantidade"],
-                    product["un_com"],
-                    f"R$ {product['vlr_uni']:.2f}",
-                    f"R$ {product['vlr_dz']:.2f}",
-                    f"R$ {product['vlr_total']:.2f}",
-                    f"R$ {product['lucro_total']:.2f}",
-                    "0.0000"  # Volume total set to 0 for DUZIA
+                    product.get("produto", "N/A"),
+                    product.get("quantidade", 0),
+                    product.get("un_com", "N/A"),
+                    product.get("vlr_uni", 0.0),
+                    product.get("vlr_dz", 0.0),
+                    product.get("vlr_total", 0.0),
+                    product.get("lucro_total", 0.0)
                 ))
-
-            # Load ITEM products
+                
+            # Load nota_item
             for product in data.get("nota_item", []):
                 self.invoice_item_table.insert("", "end", values=(
-                    product["produto"],
-                    product["quantidade"],
-                    product["un_com"],
-                    f"R$ {product['vlr_uni']:.2f}",
-                    f"R$ {product['vlr_total']:.2f}",
-                    f"R$ {product['lucro_total']:.2f}"
+                    product.get("produto", "N/A"),
+                    product.get("quantidade", 0),
+                    product.get("un_com", "N/A"),
+                    product.get("vlr_uni", 0.0),
+                    product.get("vlr_total", 0.0),
+                    product.get("lucro_total", 0.0)
                 ))
 
         except (FileNotFoundError, json.JSONDecodeError):
@@ -1478,7 +1490,7 @@ class NotesTab(ttk.Frame):
                 "produto": values[0],
                 "quantidade": values[1],
                 "un_com": "UNIDADE",  # Assuming UNIDADE for this example
-                "vlr_m": float(values[3].replace("R$", "").replace(",", ".")),
+                "vl_m": float(values[3].replace("R$", "").replace(",", ".")),
                 "vlr_un": float(values[4].replace("R$", "").replace(",", ".")),
                 "vlr_total": float(values[5].replace("R$", "").replace(",", ".")),
                 "lucro_total": float(values[6].replace("R$", "").replace(",", ".")),
@@ -1690,7 +1702,7 @@ class NotesTab(ttk.Frame):
         elif column_index == 4:  # Valor por Duzia
             old_total_value = float(values[5][3:].replace(",", "."))
             old_profit = float(values[6][3:].replace(",", "."))
-            
+
             values[4] = f"{new_value:.2f}"  # No "R$" for DUZIA
             
             # Update total value based on new price per dozen
@@ -1960,7 +1972,7 @@ class NotesTab(ttk.Frame):
             os.startfile(nome_pdf)
 
             # Update inventory and report after generating the invoice
-            self.update_inventory_after_invoice()
+            self.update_inventory_after_invoice()  # Call the new method to update inventory
             self.parent.save_data()
             self.update_report_after_invoice(cliente_nome, total_final)
         except Exception as e:
@@ -1992,7 +2004,7 @@ class NotesTab(ttk.Frame):
             try:
                 if " " in madeira_part:
                     madeira, tamanho_str = madeira_part.rsplit(" ", 1)  # Split from the right
-                    tamanho = float(tamanho_str.replace("M", "").strip())  # Convert size to float
+                    tamanho = float(tamanho_str.replace("M", "").strip())  # Convert size to float, removing "M"
                 else:
                     madeira = madeira_part
                     tamanho = 0.0  # Default value if size is not provided
@@ -2007,9 +2019,6 @@ class NotesTab(ttk.Frame):
                 print(f"Error converting dimensions: {e}")
                 print(f"Espessura and largura parts: {parts[1].split('X')}")
                 continue  # Skip this product if there's a conversion error
-
-            # Print the extracted values for debugging
-            print(f"Extracted values - Descricao: {descricao}, Madeira: {madeira}, Espessura: {espessura}, Largura: {largura}, Tamanho: {tamanho}")
 
             # Update the inventory for UNIDADE products
             for inv in self.parent.inventory:
@@ -2040,8 +2049,57 @@ class NotesTab(ttk.Frame):
                     print(f"Updated inventory for item {produto_desc}: New quantity is {inv['quantidade']}")
                     break  # Exit the loop after updating
 
-        self.parent.save_data()  # Save data after updating inventory
+        # Atualizar o estoque para produtos do tipo DUZIA
+        for item in self.invoice_duzia_table.get_children():
+            produto = self.invoice_duzia_table.item(item)["values"]
+            produto_desc = produto[0]
+            quantidade = produto[1]
 
+            # Print the product description and quantity for debugging
+            print(f"Processing duzia product: {produto_desc}, Quantity: {quantidade}")
+
+            # Extrair detalhes da descrição do produto
+            parts = produto_desc.split(" - ")
+            print(f"Parts after split: {parts}")  # Debugging output
+
+            if len(parts) < 2:
+                print("Skipping product due to insufficient parts.")
+                continue  # Skip if the format is not as expected
+
+            descricao = parts[0].strip()  # Nome do produto
+            madeira_part = parts[1].strip()  # Parte que contém a madeira e o tamanho
+
+            # Separar a madeira e o tamanho
+            try:
+                if " " in madeira_part:
+                    madeira, tamanho_str = madeira_part.rsplit(" ", 1)  # Divide a partir da direita
+                    tamanho = float(tamanho_str.replace("M", "").strip())  # Converte o tamanho para float, removendo "M"
+                else:
+                    madeira = madeira_part
+                    tamanho = 0.0  # Valor padrão se o tamanho não for fornecido
+            except ValueError as e:
+                print(f"Error converting size: {e}")
+                continue  # Pular este produto se houver um erro de conversão
+
+            # Atualizar o estoque para produtos do tipo DUZIA
+            for inv in self.parent.inventory:
+                print(f"Checking inventory item for DUZIA: {inv}")  # Print inventory item for debugging
+                if (inv['tipo'] == "Dz/Unid" and 
+                    inv['descricao'].strip() == descricao and 
+                    inv['madeira'].strip() == madeira and 
+                    inv['tamanho'] == tamanho):  # Verifica todos os atributos
+
+                    # Verifica a unidade de medida e atualiza a quantidade corretamente
+                    if produto[2] == "UNIDADE":  # Supondo que a unidade de medida está na terceira posição
+                        inv['quantidade'] -= quantidade  # Decrease the quantity directly
+                    elif produto[2] == "DUZIA":  # Se for DUZIA
+                        inv['quantidade'] -= quantidade * 12
+
+                print(f"Updated inventory for duzia {produto_desc}: New quantity is {inv['quantidade']}")
+                break  # Exit the loop after updating
+
+        self.parent.save_data()  # Save data after updating inventory
+            
     def update_report_after_invoice(self, cliente_nome, total_final):
         """Atualiza o relatório com a nova venda."""
         # Iterar por todos os itens na tabela de fatura e adicioná-los ao relatório
@@ -2108,9 +2166,7 @@ class NotesTab(ttk.Frame):
             }
             reports.append(new_report)  # Adicionar o novo relatório à lista de relatórios
 
-        self.parent.save_data()  # Salvar dados após atualizar relatórios
-    
-from fpdf import FPDF
+        self.parent.save_data()  # Salvar dados após atualizar relatórios    
 
 class ReportsTab(ttk.Frame):
     def __init__(self, parent):
@@ -2146,17 +2202,17 @@ class ReportsTab(ttk.Frame):
         self.report_table = ttk.Treeview(self, columns=("Produto", "Quantidade", "UN COM.", "Valor Total", "Lucro Total", "Cliente", "Data", "Volume Total"), show='headings')
         self.report_table.heading("Produto", text="Produto")
         self.report_table.heading("Quantidade", text="Qtd")
-        self.report_table.heading("UN COM.", text="UN COM.")
+        self.report_table.heading("UN COM.", text="UN COM.")  # Adicionando cabeçalho para UN COM.
         self.report_table.heading("Valor Total", text="Valor Total")
         self.report_table.heading("Lucro Total", text="Lucro Total")
         self.report_table.heading("Cliente", text="Cliente")
         self.report_table.heading("Data", text="Data")
-        self.report_table.heading("Volume Total", text="Volume Total (M³)")
+        self.report_table.heading("Volume Total", text="Volume Total (m³)")
 
         # Ajustar tamanho das colunas
         self.report_table.column("Produto", width=150, anchor="center")
         self.report_table.column("Quantidade", width=60, anchor="center")
-        self.report_table.column("UN COM.", width=60, anchor="center")
+        self.report_table.column("UN COM.", width=60, anchor="center")  # Ajustando largura da coluna UN COM.
         self.report_table.column("Valor Total", width=100, anchor="center")
         self.report_table.column("Lucro Total", width=100, anchor="center")
         self.report_table.column("Cliente", width=150, anchor="center")
@@ -2190,12 +2246,12 @@ class ReportsTab(ttk.Frame):
         pdf.ln(10)  # Linha em branco
         pdf.cell(75, 15, "Produto", border=1, align="C")
         pdf.cell(15, 15, "Qtd", border=1, align="C")
-        pdf.cell(25, 15, "UN COM.", border=1, align="C")
+        pdf.cell(25, 15, "UN COM.", border=1, align="C")  # Adicionando coluna UN COM.
         pdf.cell(60, 15, "Valor Total", border=1, align="C")
         pdf.cell(50, 15, "Lucro Total", border=1, align="C")
         pdf.cell(80, 15, "Cliente", border=1, align="C")
         pdf.cell(50, 15, "Data", border=1, align="C")
-        pdf.cell(60, 15, "Volume Total (M³)", border=1, align="C")
+        pdf.cell(60, 15, "Volume Total (m³)", border=1, align="C")
         pdf.ln(15)  # Nova linha para os dados
 
         # Adicionar dados da tabela no PDF
@@ -2247,42 +2303,31 @@ class ReportsTab(ttk.Frame):
             self.report_table.insert("", "end", values=(
                 report.get("produto", "N/A"),
                 report.get("quantidade", 0),
-                report.get("un_com", "N/A"),
-                f"R$ {float(report.get('valor_total', 0)):.2f}",
-                f"R$ {float(report.get('lucro_total', 0)):.2f}",
+                report.get("un_com", "N/A"),  # Adicionando UN COM. no relatório
+                f"R$ {float(report.get('valor_total', 0)):.2f}",  # Converter para float
+                f"R$ {float(report.get('lucro_total', 0)):.2f}",  # Converter para float
                 report.get("cliente", "N/A"),
                 report.get("data", "N/A"),
-                f"{int(float(report.get('volume_total', 0)))}" if report.get('volume_total') else "0"  # Remove decimal
-            ))
+                f"{float(report.get('volume_total', 0)):.4f}" if report.get('volume_total') else "0.0000"  # Verifica se volume_total é vazio
+            ))  
+
 
     def delete_report(self):
         selected_item = self.report_table.selection()
         if selected_item:
             report_desc = self.report_table.item(selected_item)["values"][0]  # Descrição do produto
             confirm = messagebox.askyesno("Confirmar", f"Deseja excluir o relatório para o produto {report_desc}?")
-
             if confirm:
-                # Find the report to delete
-                report_to_delete = None
-                for report in reports:
+                for item in selected_item:
+                    self.report_table.delete(item)
+                for report in reports[:]:
                     if report.get("produto") == report_desc:
-                        report_to_delete = report
-                        break
-                        
-                # Check if the report has all required fields
-                if report_to_delete and all(key in report_to_delete for key in ["produto", "quantidade", "valor_total", "lucro_total", "cliente", "data", "volume_total"]):
-                    # Delete from the table
-                    for item in selected_item:
-                        self.report_table.delete(item)
-
-                    # Remove from the reports list
-                    reports.remove(report_to_delete)
-                    messagebox.showinfo("Sucesso", "Relatório excluído com sucesso!")
-                else:
-                    messagebox.showwarning("Erro", "Relatório não pode ser excluído. Campos obrigatórios estão faltando.")
+                        reports.remove(report)
+                messagebox.showinfo("Sucesso", "Relatório excluído com sucesso!")
         else:
             messagebox.showwarning("Erro", "Selecione um relatório para excluir.")
 
+            
     def send_to_whatsapp(self):
         from twilio.rest import Client
         from tkinter import messagebox
@@ -2731,45 +2776,37 @@ class InventoryTab(ttk.Frame):
 
                 if len(parts) >= 3:  
                     madeira = parts[1].strip()  # Tipo de madeira
-                    ultimo_item = parts[-1].strip()  # Pode ser unidade ou tamanho
+                    # Para produtos LxE, o tamanho é a última parte
+                    tamanho_str = parts[-1].replace(" M", "").strip()  # Tamanho (sem unidade)
 
-                    if "/" in ultimo_item:  # Caso "LASCA - EUCALIPTO - 2.2 M / UNIDADE"
-                        tamanho_str, unidade_comercial = ultimo_item.split(" / ")
-                        unidade_comercial = unidade_comercial.strip()
-                    else:
-                        tamanho_str = ultimo_item
-                        unidade_comercial = None
-
+                    # Remover "M" e converter para float
                     try:
-                        tamanho = float(tamanho_str.replace(" M", "").strip())
+                        tamanho = float(tamanho_str)
                     except ValueError:
+                        print(f"Erro ao converter tamanho: {tamanho_str}")  # Debugging print statement
                         continue  # Se houver erro na conversão, ignora este item
 
                     # Para Dz/Unid
-                    if len(parts) == 3 and unidade_comercial:  
+                    if len(parts) == 3:  
+                        print(f"Excluindo produto do tipo 'Dz/Unid': {produto_descricao}, madeira: {madeira}, tamanho: {tamanho}")  # Debugging print statement
                         self.parent.inventory = [
                             inv for inv in self.parent.inventory
-                            if not (inv['tipo'] == "Dz/Unid" and inv['descricao'].strip() == produto_descricao and 
-                                    inv['madeira'].strip() == madeira and inv['tamanho'] == tamanho and 
-                                    inv['un_com'].strip().upper() == unidade_comercial.upper())
+                            if not (inv['tipo'] == "Dz/Unid" and 
+                                    inv['descricao'].strip() == produto_descricao and 
+                                    inv['madeira'].strip() == madeira and 
+                                    inv['tamanho'] == tamanho)
                         ]
 
                     # Para LxE
                     elif len(parts) >= 4:  
-                        esp_largura = parts[2].split('X')  # Separar "8.0X12.0"
-                        if len(esp_largura) != 2:
-                            continue  # Ignora se o formato não for esperado
+                        esp_largura = parts[2].strip()  # A parte do meio contém "espessuraXlargura"
+                        espessura, largura = map(float, esp_largura.split('X'))  # Separar e converter espessura e largura
 
-                        try:
-                            espessura = int(float(esp_largura[0].strip()))  # Remove espaços antes de converter para int
-                            largura = int(float(esp_largura[1].strip()))  # Remove espaços antes de converter para int
-                            tamanho = float(parts[3].replace(" M", "").strip())  # Converte tamanho corretamente para float
-                        except ValueError:
-                            continue  # Se não conseguir converter, ignora
-                   
+                        print(f"Excluindo produto do tipo 'LxE': {produto_descricao}, madeira: {madeira}, espessura: {espessura}, largura: {largura}, tamanho: {tamanho}")  # Debugging print statement
                         self.parent.inventory = [
                             inv for inv in self.parent.inventory
-                            if not (inv['tipo'] == "LxE" and inv['descricao'].strip() == produto_descricao and 
+                            if not (inv['tipo'] == "LxE" and 
+                                    inv['descricao'].strip() == produto_descricao and 
                                     inv['madeira'].strip() == madeira and
                                     inv['espessura'] == espessura and 
                                     inv['largura'] == largura and 
@@ -2779,7 +2816,6 @@ class InventoryTab(ttk.Frame):
         self.update_inventory_table()  # Atualiza a tabela
         self.parent.save_data()  # Salva os dados após a exclusão
         messagebox.showinfo("Sucesso", "Produto excluído com sucesso!")
-
     def clear_main_frame(self):
         for widget in self.main_frame.winfo_children():
             widget.destroy()

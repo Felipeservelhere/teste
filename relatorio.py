@@ -263,6 +263,11 @@ class ProductsTab(ttk.Frame):
             # Calculate cost and profit
             cost_per_meter = volume_per_m * cost_per_m3
             profit = sale_price_per_m - cost_per_meter
+
+            # Adjust profit calculation based on unit type
+            if self.un_com_var.get() == "DUZIA":
+                profit /= 12  # Divide profit by 12 if the unit is DUZIA
+
             profit_percentage = (profit / cost_per_meter * 100) if cost_per_meter > 0 else 0  # Calculate profit percentage
 
             self.lucro_label.config(text=f"Lucro: R$ {profit:.2f}".rstrip('0').rstrip('.'))
@@ -642,15 +647,37 @@ class ProductsTab(ttk.Frame):
     def register_new_product(self):
         """Register the new product with the provided details."""
         try:
+            # Retrieve input values
+            product_name = self.new_product_desc.get()
+            wood_type = self.new_product_wood_type.get()
+            size = float(self.new_product_size.get())
+            purchase_price = float(self.new_product_purchase_price.get())
+            sale_price = float(self.new_product_sale_price.get())
+            unit_type = self.new_product_unit_type.get()
+
+            # Validate required fields
+            if not product_name or not wood_type:
+                messagebox.showwarning("Atenção", "Preencha todos os campos obrigatórios!")
+                return
+
+            # Create a new product dictionary
             new_product = {
-                "descricao": self.new_product_desc.get(),
-                "madeira": self.new_product_wood_type.get(),
-                "tamanho": float(self.new_product_size.get()),
-                "vl_m": float(self.new_product_purchase_price.get()),
-                "valor_venda": float(self.new_product_sale_price.get()),
-                "un_com": self.new_product_unit_type.get(),
-                "tipo": "Dz/Unid"  # Adicionando o tipo do produto
+                "descricao": product_name,
+                "madeira": wood_type,
+                "tamanho": size,  # Store as float to allow decimals
+                "vl_m": purchase_price,
+                "valor_venda": sale_price,
+                "un_com": unit_type,  # Store the unit type
+                "tipo": "Dz/Unid"  # Adding the product type
             }
+
+            # Calculate profit based on the unit type
+            if unit_type == "UNIDADE":
+                profit = sale_price - purchase_price  # Profit for unit
+            else:  # Assuming it's "DUZIA"
+                profit = (sale_price / 12) - (purchase_price / 12)  # Profit per unit in a dozen
+
+            new_product["lucro"] = profit  # Store profit in the product dictionary
 
             # Add the new product to the global products list
             products.append(new_product)
@@ -673,7 +700,7 @@ class ClientsTab(ttk.Frame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.selected_button = None
-        self.parent = parent  # Store the object that manages data persistence (if any)
+        self.parent = parent  # Armazena o objeto que gerencia a persistência de dados (se houver)
         self.create_widgets()
 
     def create_widgets(self):
@@ -721,48 +748,66 @@ class ClientsTab(ttk.Frame):
         command()
 
     def register_client_frame(self):
-        # Create the registration frame
+        # Cria o frame de registro
         self.register_frame = tk.Frame(self.main_frame, bg="white")
+        self.register_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(self.register_frame, text="NOME DO CLIENTE:").grid(row=0, column=0, padx=10, pady=5, sticky=tk.W)
-        self.client_name = ttk.Entry(self.register_frame)
-        self.client_name.grid(row=0, column=1, padx=10, pady=5, sticky=tk.W)
+        # Criando um estilo para aumentar a altura das caixas de entrada
+        style = ttk.Style()
+        style.configure("Big.TEntry", padding=(20, 20, 20, 20), font=("Arial", 14))  # Aumenta o espaçamento interno
 
-        ttk.Label(self.register_frame, text="TELEFONE DO CLIENTE:").grid(row=1, column=0, padx=10, pady=5, sticky=tk.W)
-        self.client_phone = ttk.Entry(self.register_frame)
-        self.client_phone.grid(row=1, column=1, padx=10, pady=5, sticky=tk.W)
+        # Labels e campos de entrada ajustados
+        ttk.Label(self.register_frame, text="NOME:", font=("Arial", 12)).grid(row=0, column=0, padx=10, pady=5, sticky=tk.W)
+        self.client_name = ttk.Entry(self.register_frame, width=100, style="Big.TEntry")
+        self.client_name.grid(row=0, column=1, padx=10, pady=5, sticky=tk.EW, ipady=5)
 
-        ttk.Label(self.register_frame, text="CPF DO CLIENTE:").grid(row=2, column=0, padx=10, pady=5, sticky=tk.W)
-        self.client_cpf = ttk.Entry(self.register_frame)
-        self.client_cpf.grid(row=2, column=1, padx=10, pady=5, sticky=tk.W)
+        ttk.Label(self.register_frame, text="TELEFONE:", font=("Arial", 12)).grid(row=1, column=0, padx=10, pady=5, sticky=tk.W)
+        self.client_phone = ttk.Entry(self.register_frame, width=100, style="Big.TEntry")
+        self.client_phone.grid(row=1, column=1, padx=10, pady=5, sticky=tk.EW, ipady=5)
 
-        ttk.Label(self.register_frame, text="ENDEREÇO DO CLIENTE:").grid(row=3, column=0, padx=10, pady=5, sticky=tk.W)
-        self.client_address = ttk.Entry(self.register_frame)
-        self.client_address.grid(row=3, column=1, padx=10, pady=5, sticky=tk.W)
+        ttk.Label(self.register_frame, text="CPF/CNPJ:", font=("Arial", 12)).grid(row=2, column=0, padx=10, pady=5, sticky=tk.W)
+        self.client_cpf = ttk.Entry(self.register_frame, width=100, style="Big.TEntry")
+        self.client_cpf.grid(row=2, column=1, padx=10, pady=5, sticky=tk.EW, ipady=5)
 
+        ttk.Label(self.register_frame, text="ENDEREÇO:", font=("Arial", 12)).grid(row=3, column=0, padx=10, pady=5, sticky=tk.W)
+        self.client_address = ttk.Entry(self.register_frame, width=100, style="Big.TEntry")
+        self.client_address.grid(row=3, column=1, padx=10, pady=5, sticky=tk.EW, ipady=5)
+
+        # Botão de adicionar
         add_button = tk.Button(
             self.register_frame,
             text="+ ADICIONAR",
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),
             bg="green",
             fg="white",
             activebackground="darkgreen",
             activeforeground="white",
             command=self.register_client,
+            height=1  # Aumentando a altura do botão
         )
-        add_button.grid(row=4, columnspan=2, pady=10)
+        add_button.grid(row=4, columnspan=2, pady=15, padx=10, sticky=tk.EW)
+
+        # Expandir colunas para ocupar toda a tela
+        self.register_frame.columnconfigure(1, weight=1)
 
     def show_register_client(self):
         self.clear_main_frame()
         self.register_client_frame()
-        self.register_frame.pack(fill=tk.BOTH, expand=True)
 
     def show_edit_client(self):
         self.clear_main_frame()
         self.edit_frame = tk.Frame(self.main_frame, bg="white")
         self.edit_frame.pack(fill=tk.BOTH, expand=True)
 
-        for client in clients:  # Use the global clients list
+        # Barra de pesquisa
+        search_label = ttk.Label(self.edit_frame, text="Pesquisar Cliente:")
+        search_label.pack(padx=10, pady=5, anchor=tk.W)
+        self.search_edit_entry = ttk.Entry(self.edit_frame)
+        self.search_edit_entry.pack(padx=10, pady=5, fill=tk.X)
+
+        # Ordenar clientes por nome
+        sorted_clients = sorted(clients, key=lambda c: c.get("name", "").lower())
+        for client in sorted_clients:
             client_frame = tk.Frame(self.edit_frame, bg="white", relief=tk.RAISED, bd=1)
             client_frame.pack(fill=tk.X, padx=5, pady=2)
 
@@ -786,23 +831,23 @@ class ClientsTab(ttk.Frame):
                 frame.edit_details_frame = tk.Frame(frame, bg="white")
 
                 ttk.Label(frame.edit_details_frame, text="Nome:").grid(row=0, column=0, padx=10, pady=5, sticky=tk.W)
-                edit_name = ttk.Entry(frame.edit_details_frame)
-                edit_name.grid(row=0, column=1, padx=10, pady=5, sticky=tk.W)
+                edit_name = ttk.Entry(frame.edit_details_frame, width=100)
+                edit_name.grid(row=0, column=1, padx=10, pady=5, sticky=tk.EW)
                 edit_name.insert(0, client.get("name", ""))
 
                 ttk.Label(frame.edit_details_frame, text="CPF:").grid(row=1, column=0, padx=10, pady=5, sticky=tk.W)
-                edit_cpf = ttk.Entry(frame.edit_details_frame)
-                edit_cpf.grid(row=1, column=1, padx=10, pady=5, sticky=tk.W)
+                edit_cpf = ttk.Entry(frame.edit_details_frame, width=100)
+                edit_cpf.grid(row=1, column=1, padx=10, pady=5, sticky=tk.EW)
                 edit_cpf.insert(0, client.get("cpf", ""))
 
                 ttk.Label(frame.edit_details_frame, text="Telefone:").grid(row=2, column=0, padx=10, pady=5, sticky=tk.W)
-                edit_phone = ttk.Entry(frame.edit_details_frame)
-                edit_phone.grid(row=2, column=1, padx=10, pady=5, sticky=tk.W)
+                edit_phone = ttk.Entry(frame.edit_details_frame, width=100)
+                edit_phone.grid(row=2, column=1, padx=10, pady=5, sticky=tk.EW)
                 edit_phone.insert(0, client.get("phone", ""))
 
                 ttk.Label(frame.edit_details_frame, text="Endereço:").grid(row=3, column=0, padx=10, pady=5, sticky=tk.W)
-                edit_address = ttk.Entry(frame.edit_details_frame)
-                edit_address.grid(row=3, column=1, padx=10, pady=5, sticky=tk.W)
+                edit_address = ttk.Entry(frame.edit_details_frame, width=100)
+                edit_address.grid(row=3, column=1, padx=10, pady=5, sticky=tk.EW)
                 edit_address.insert(0, client.get("address", ""))
 
                 save_button = tk.Button(
@@ -823,14 +868,22 @@ class ClientsTab(ttk.Frame):
         client["phone"] = edit_phone.get()
         client["address"] = edit_address.get()
         messagebox.showinfo("Sucesso", "Cliente atualizado com sucesso!")
-        self.parent.save_data()  # Save data after editing
+        self.parent.save_data()  # Salvar dados após edição
 
     def show_delete_client(self):
         self.clear_main_frame()
         self.delete_frame = tk.Frame(self.main_frame, bg="white")
         self.delete_frame.pack(fill=tk.BOTH, expand=True)
 
-        for client in clients:  # Use the global clients list
+        # Barra de pesquisa
+        search_label = ttk.Label(self.delete_frame, text="Pesquisar Cliente:")
+        search_label.pack(padx=10, pady=5, anchor=tk.W)
+        self.search_delete_entry = ttk.Entry(self.delete_frame)
+        self.search_delete_entry.pack(padx=10, pady=5, fill=tk.X)
+
+        # Ordenar clientes por nome
+        sorted_clients = sorted(clients, key=lambda c: c.get("name", "").lower())
+        for client in sorted_clients:
             client_frame = tk.Frame(self.delete_frame, bg="white", relief=tk.RAISED, bd=1)
             client_frame.pack(fill=tk.X, padx=5, pady=2)
 
@@ -845,7 +898,7 @@ class ClientsTab(ttk.Frame):
         if confirm:
             clients.remove(client)
             messagebox.showinfo("Sucesso", "Cliente excluído com sucesso!")
-            self.show_delete_client()  # Refresh the delete client view
+            self.show_delete_client()  # Atualiza a visualização de exclusão
 
     def clear_main_frame(self):
         for widget in self.main_frame.winfo_children():
@@ -853,18 +906,18 @@ class ClientsTab(ttk.Frame):
 
     def register_client(self):
         try:
-            # Retrieve input values
+            # Recupera os valores de entrada
             client_name = self.client_name.get()
             client_phone = self.client_phone.get()
             client_cpf = self.client_cpf.get()
             client_address = self.client_address.get()
 
-            # Validate required fields
+            # Valida campos obrigatórios
             if not client_name or not client_phone or not client_cpf or not client_address:
                 messagebox.showwarning("Atenção", "Preencha todos os campos obrigatórios!")
                 return
 
-            # Create a new client
+            # Cria um novo cliente
             new_client = {
                 "name": client_name,
                 "cpf": client_cpf,
@@ -873,20 +926,20 @@ class ClientsTab(ttk.Frame):
                 "movements": [],
             }
 
-            # Add the client to the global clients list
+            # Adiciona o cliente à lista global de clientes
             clients.append(new_client)
 
-            # Notify the user
+            # Notifica o usuário
             messagebox.showinfo("Sucesso", f"Cliente '{client_name}' cadastrado com sucesso!")
 
-            # Clear input fields
-            self.clear_fields()  # Clear fields after registration
+            # Limpa os campos de entrada
+            self.clear_fields()  # Limpa os campos após o registro
 
-            # Update NotesTab with the new client
+            # Atualiza a aba de notas com o novo cliente
             self.parent.update_notes_tab_with_new_client(new_client)
 
-            # Save persistent data
-            self.parent.save_data()  # Ensure this line is called correctly
+            # Salva dados persistentes
+            self.parent.save_data()  # Garante que esta linha seja chamada corretamente
 
         except ValueError:
             messagebox.showerror("Erro", "Certifique-se de que os campos numéricos estão preenchidos corretamente.")
@@ -989,10 +1042,7 @@ class NotesTab(ttk.Frame):
         self.btn_add_product = ttk.Button(self.duzia_frame, text="Adicionar Produto", command=self.add_product_to_invoice_duzia)
         self.btn_add_product.grid(row=3, columnspan=2, pady=10)
 
-        # Button to remove product
-        self.btn_remove_product = ttk.Button(self.duzia_frame, text="Remover Produto", command=self.remove_product_from_invoice)
-        self.btn_remove_product.grid(row=3, column=2, pady=10)
-
+        # Create the invoice table
         self.invoice_table = ttk.Treeview(self.duzia_frame, columns=("Produto", "Quantidade", "UN COM.", "Valor por Unidade", "Valor por Duzia", "Valor Total", "Lucro Total"), show='headings')
         self.invoice_table.heading("Produto", text="Produto Descrição")
         self.invoice_table.heading("Quantidade", text="Qtd")
@@ -1002,21 +1052,16 @@ class NotesTab(ttk.Frame):
         self.invoice_table.heading("Valor Total", text="Vlr Total")
         self.invoice_table.heading("Lucro Total", text="Lucro Total")
         self.invoice_table.grid(row=4, columnspan=3, sticky='nsew')
+        
+        self.invoice_table.bind("<Double-1>", self.on_invoice_duzia_double_click)
+
+        # Use self.duzia_frame as the parent for the save button
+        self.btn_save_products = ttk.Button(self.duzia_frame, text="Salvar Produtos", command=self.save_duzia_products_to_json)
+        self.btn_save_products.grid(row=5, columnspan=3, pady=10)
 
         # Configure grid weights for resizing
         self.duzia_frame.grid_rowconfigure(4, weight=1)  # Allow the invoice table to expand
         self.duzia_frame.grid_columnconfigure(1, weight=1)  # Allow the product entry to expand
-
-        # Button to save products in the duzia frame
-        self.btn_save_duzia_products = ttk.Button(self.duzia_frame, text="Salvar Produtos", command=self.save_duzia_products_to_json)
-        self.btn_save_duzia_products.grid(row=5, columnspan=3, pady=10)
-
-        # Button to generate PDF
-        self.btn_generate_pdf = ttk.Button(self.duzia_frame, text="Gerar Nota", command=self.gerar_pdf)
-        self.btn_generate_pdf.grid(row=6, columnspan=3, pady=10)
-
-        # Bind double-click event to edit values
-        self.invoice_table.bind("<Double-1>", self.on_invoice_duzia_double_click)
 
     def add_product_to_invoice_duzia(self):
         selected_product = self.product_entry.get()
@@ -1257,18 +1302,12 @@ class NotesTab(ttk.Frame):
         # Configure grid weights for resizing
         self.item_frame.grid_rowconfigure(3, weight=1)  # Allow the invoice table to expand
         self.item_frame.grid_columnconfigure(1, weight=1)  # Allow the product entry to expand
-
-        # Button to save products in the item frame
+        
         self.btn_save_item_products = ttk.Button(self.item_frame, text="Salvar Produtos", command=self.save_item_products_to_json)
         self.btn_save_item_products.grid(row=4, columnspan=3, pady=10)
-
-        # Button to generate PDF
-        self.btn_generate_pdf = ttk.Button(self.item_frame, text="Gerar Nota", command=self.gerar_pdf)
-        self.btn_generate_pdf.grid(row=5, columnspan=3, pady=10)
-
-        # Bind double-click event to edit values
+        
         self.invoice_item_table.bind("<Double-1>", self.on_item_double_click)
-
+        
     def add_product_to_invoice_item(self):
         selected_product = self.product_entry.get()
         quantity = self.quantity_entry.get()
@@ -1491,11 +1530,11 @@ class NotesTab(ttk.Frame):
     def add_product_to_invoice_duzia(self):
         selected_product = self.product_entry.get()
         size = self.size_entry.get()
-    
-        # Obter a quantidade diretamente do campo de entrada
-        quantity_str = self.quantity_entry_duzia.get()  # Supondo que você tenha um campo de entrada para quantidade
 
-        # Verificar se a quantidade é um número válido
+        # Get the quantity directly from the input field
+        quantity_str = self.quantity_entry_duzia.get()  # Assuming you have an input field for quantity
+
+        # Check if the quantity is a valid number
         try:
             quantity = int(quantity_str)
         except ValueError:
@@ -1519,9 +1558,9 @@ class NotesTab(ttk.Frame):
                 # Insert into the invoice table
                 self.invoice_table.insert("", "end", values=(f"{selected_product} {size}M", quantity, "DUZIA", f"R$ {price_per_unit:.2f}", f"R$ {price_per_dz:.2f}", f"R$ {total_value:.2f}", f"R$ {profit_total:.2f}"))
             else:  # UNIDADE
-                price_per_unit = product_details["valor_venda"] /12  # Selling price for a unit
+                price_per_unit = product_details["valor_venda"]  # Selling price for a unit
                 total_value = price_per_unit * quantity  # Total value for the quantity
-                profit_total = (price_per_unit - (product_details["vl_m"] / 12)) * quantity  # Total profit
+                profit_total = (price_per_unit - product_details["vl_m"]) * quantity  # Total profit
 
                 # Insert into the invoice table
                 self.invoice_table.insert("", "end", values=(f"{selected_product} {size}M", quantity, "UNIDADE", f"R$ {price_per_unit:.2f}", "R$ 0.00", f"R$ {total_value:.2f}", f"R$ {profit_total:.2f}"))
@@ -1631,13 +1670,39 @@ class NotesTab(ttk.Frame):
         column = self.invoice_table.identify_column(event.x)
         column_index = int(column.replace("#", "")) - 1
 
-        if column_index in [3, 4]:  # Check if the clicked column is "Valor por Metro" or "Valor Unitário"
+        if column_index == 1:  # Check if the clicked column is "Quantidade"
+            current_value = self.invoice_table.item(item)["values"][column_index]
+            new_value = simpledialog.askinteger("Editar Quantidade", f"Nova quantidade para {self.invoice_table.heading(column)['text']}:",
+                                                 initialvalue=int(current_value))
+
+            if new_value is not None:
+                self.invoice_table.item(item, values=self.update_invoice_quantity(item, new_value))
+
+        elif column_index in [3, 4]:  # Check if the clicked column is "Valor por Metro" or "Valor Unitário"
             current_value = self.invoice_table.item(item)["values"][column_index]
             new_value = simpledialog.askfloat("Editar Valor", f"Novo valor para {self.invoice_table.heading(column)['text']}:",
                                                 initialvalue=float(current_value.replace("R$", "").replace(",", ".")))
 
             if new_value is not None:
                 self.invoice_table.item(item, values=self.update_invoice_values(item, column_index, new_value))
+
+    def update_invoice_quantity(self, item, new_quantity):
+        values = list(self.invoice_table.item(item)["values"])
+        product_description = values[0]
+        last_quantity = values[1]  # This is already an integer, no need toconvert
+        price_per_unit= float(values[4][3:].replace(",", ".")) # Assumingprice per unit is in the 4th column
+        total_value =price_per_unit* new_quantity  #Recalculate total value
+        last_profit = float(values[6][3:].replace(",", "."))  # Current profit
+        # Calculate profit per unit based on the lasttotal profit and last quantity
+        profit_per_unit = last_profit / last_quantity if last_quantity >0 else 0  # Calculate profit per unit
+        profit_total = profit_per_unit * new_quantity  # Totalprofit based on the new quantity
+
+        values[1] = new_quantity  # Update quantity
+        values[5] = f"R$ {total_value:.2f}"  # Update total value
+        values[6] = f"R$ {profit_total:.2f}"  # Update profit total
+
+        return values
+
 
     def update_invoice_values(self, item, column_index, new_value):
         values = list(self.invoice_table.item(item)["values"])
@@ -1847,32 +1912,40 @@ class NotesTab(ttk.Frame):
         messagebox.showinfo("Sucesso", f"Produto '{product_description}' removido do invoice e quantidade restaurada no estoque.")    
 
     def confirm_product(self, event):
-        product_name = self.product_entry.get().replace(" ", "").lower()  # Remove spaces and convert to lowercase
+        """Confirm product selection for Criar Nota."""
+        product_name = self.product_entry.get().strip().lower()  # Remove spaces and convert to lowercase
+        print(f"Searching for product: '{product_name}'")  # Debugging output
+        print("Available products:", products)  # Debugging output
+
         matched_products = [
             product for product in products 
-            if product_name in f"{product.get('descricao', '')}{product.get('espessura', '')}X{product.get('largura', '')}{product.get('madeira', '')}".replace(" ", "").lower()
+            if product['tipo'] == "LxE" and product_name in f"{product['descricao'].lower()} - {product['espessura']}x{product['largura']} - {product['madeira'].lower()}"
         ]
+
+        print(f"Matched products: {matched_products}")  # Debugging output
 
         if len(matched_products) == 1:
             self.product_entry.delete(0, tk.END)
             product = matched_products[0]
-            if product.get('un_com') == "UNIDADE":
-                self.product_entry.insert(0, f"{product['descricao']} - {product.get('espessura', 'N/A')} X {product.get('largura', 'N/A')} - {product.get('madeira', 'N/A')}")
-            else:
-                self.product_entry.insert(0, f"{product['descricao']} - {product.get('diametro_menor', 'N/A')} X {product.get('diametro_maior', 'N/A')} - {product.get('madeira', 'N/A')} - Tamanho: {product.get('tamanho', 'N/A')}")
-                self.size_entry.delete(0, tk.END)
-                self.size_entry.insert(0, product.get('tamanho', ''))
+            self.product_entry.insert(0, f"{product['descricao']} - {product['espessura']}x{product['largura']} - {product['madeira']}")
         elif len(matched_products) > 1:
             self.show_selection_window("Selecione o Produto", matched_products)
         else:
+            print("No products matched the search criteria.")  # Debugging output
             messagebox.showwarning("Erro", "Produto não encontrado!")
 
     def confirm_product_duzia(self, event):
-        product_name = self.product_entry.get().replace(" ", "").lower()  # Remove spaces and convert to lowercase
+        """Confirm product selection for Duzia."""
+        product_name = self.product_entry.get().strip().lower()  # Get the full product name and convert to lowercase
+        print(f"Searching for product: '{product_name}'")  # Debugging output
+        print("Available products:", products)  # Debugging output
+
         matched_products = [
             product for product in products 
-            if 'descricao' in product and 'madeira' in product and 'tipo' in product and product['tipo'] == "Dz/Unid" and product_name in f"{product['descricao']}{product['madeira']}".replace(" ", "").lower()
+            if product.get('tipo') == "Dz/Unid" and product_name in f"{product['descricao'].lower()} - {product['madeira'].lower()}"
         ]
+
+        print(f"Matched products: {matched_products}")  # Debugging output
 
         if len(matched_products) == 1:
             self.product_entry.delete(0, tk.END)
@@ -1880,43 +1953,113 @@ class NotesTab(ttk.Frame):
             self.product_entry.insert(0, f"{product['descricao']} - {product['madeira']}")
             self.size_entry.delete(0, tk.END)
             self.size_entry.insert(0, product.get('tamanho', ''))
+            self.unit_type_combobox.set(product.get('un_com', 'DUZIA'))  # Set the unit type
         elif len(matched_products) > 1:
-            self.show_selection_window("Selecione o Produto", matched_products, self.set_product_details_duzia)
+            self.show_selection_window_duzia("Selecione o Produto", matched_products)
         else:
+            print("No products matched the search criteria.")  # Debugging output
             messagebox.showwarning("Erro", "Produto não encontrado!")
 
+    def set_product_details_duzia(self, product_description):
+        """Define os detalhes do produto na aba Duzia com base na descrição do produto selecionado."""
+        # Encontrar o produto na lista global de produtos
+        product = next((p for p in products if f"{p['descricao']} - {p['madeira']}" == product_description), None)
+
+        if product:
+            self.product_entry.delete(0, tk.END)
+            self.product_entry.insert(0, f"{product['descricao']} - {product['madeira']}")
+            self.size_entry.delete(0, tk.END)
+            self.size_entry.insert(0, product.get('tamanho', ''))
+
+            # Selecionar automaticamente o UN COM com base nos detalhes do produto
+            self.unit_type_combobox.set(product.get('un_com', 'DUZIA'))  # Definir a caixa de combinação para o UN COM do produto
+        else:
+            messagebox.showwarning("Erro", "Produto não encontrado!")  
+     
+    def find_product_by_description(self, description):
+        """Find a product in the global products list by its description."""
+        for product in products:
+            if product['descricao'].strip().lower() == description.strip().lower():
+                return product
+        return None
+    
+    def debug_product_search(self, product_name):
+        """Debugging function to print all products and their descriptions."""
+        print("Debugging product search:")
+        for product in products:
+            print(f"Product: {product['descricao']}, Madeira: {product['madeira']}, Tipo: {product['tipo']}")                
+    
     def confirm_product_item(self, event):
-        product_name = self.product_entry.get().replace(" ", "").lower()  # Remove spaces and convert to lowercase
-        matched_products = [product for product in products if product_name in f"{product['descricao']}".replace(" ", "").lower()]
+        """Confirm product selection for Item."""
+        product_name = self.product_entry.get().strip().lower()  # Remove spaces and convert to lowercase
+        print(f"Searching for product: '{product_name}'")  # Debugging output
+        print("Available products:", products)  # Debugging output
+
+        matched_products = [
+            product for product in products 
+            if product['tipo'] == "Item" and product_name in product['descricao'].strip().lower()  # Check if product name is in the description
+        ]
+
+        print(f"Matched products: {matched_products}")  # Debugging output
 
         if len(matched_products) == 1:
             self.product_entry.delete(0, tk.END)
             product = matched_products[0]
             self.product_entry.insert(0, f"{product['descricao']}")
         elif len(matched_products) > 1:
-            self.show_selection_window("Selecione o Produto", matched_products)
+            self.show_selection_window_item("Selecione o Produto", matched_products)
         else:
             messagebox.showwarning("Erro", "Produto não encontrado!")           
 
-    def show_selection_window(self, title, options, callback):
+    def show_selection_window(self, title, options):
         top = tk.Toplevel(self)
         top.title(title)
 
         listbox = tk.Listbox(top, height=10, width=50)
         for option in options:
-            listbox.insert(tk.END, f"{option['descricao']} - {option['espessura']} X {option['largura']} - {option['madeira']}")
+            descricao = option.get('descricao', 'N/A')
+            espessura = option.get('espessura', 'N/A')  # Get the thickness
+            largura = option.get('largura', 'N/A')      # Get the width
+            madeira = option.get('madeira', 'N/A')      # Get the wood type
+            listbox.insert(tk.END, f"{descricao} - {espessura} X {largura} - {madeira}")
 
         listbox.pack(padx=10, pady=10)
-        select_button = tk.Button(top, text="Selecionar", command=lambda: self.select_from_listbox(listbox, callback))
+        select_button = tk.Button(top, text="Selecionar", command=lambda: self.select_from_listbox(listbox))
         select_button.pack(pady=5)
+        
+    def show_selection_window_duzia(self, title, options):
+        top = tk.Toplevel(self)
+        top.title(title)
 
-    def select_from_listbox(self, listbox, callback):
+        listbox = tk.Listbox(top, height=10, width=50)
+        for option in options:
+            descricao = option.get('descricao', 'N/A')
+            madeira = option.get('madeira', 'N/A')
+            listbox.insert(tk.END, f"{descricao} - {madeira}")
+
+        listbox.pack(padx=10, pady=10)
+        select_button = tk.Button(top, text="Selecionar", command=lambda: self.select_from_listbox(listbox))
+        select_button.pack(pady=5)
+        
+    def show_selection_window_item(self, title, options):
+        top = tk.Toplevel(self)
+        top.title(title)
+
+        listbox = tk.Listbox(top, height=10, width=50)
+        for option in options:
+            descricao = option.get('descricao', 'N/A')  # Get the description
+            listbox.insert(tk.END, descricao)  # Insert only the description
+
+        listbox.pack(padx=10, pady=10)
+        select_button = tk.Button(top, text="Selecionar", command=lambda: self.select_from_listbox(listbox))
+        select_button.pack(pady=5)        
+
+    def select_from_listbox(self, listbox):
         selected_index = listbox.curselection()
         if selected_index:
             selected_item = listbox.get(selected_index)
-            # Extract the product description from the selected item
-            product_description = selected_item.split(" - ")[0]  # Get the description part
-            callback(product_description)  # Call the callback with the selected product description
+            self.product_entry.delete(0, tk.END)
+            self.product_entry.insert(0, selected_item)  # Set the selected product in the entry
         listbox.master.destroy()
         
     def on_item_double_click(self, event):
@@ -1968,35 +2111,33 @@ class NotesTab(ttk.Frame):
         product_description = values[0]
 
         if column_index == 3:  # Valor por Unidade
-            old_total_value = float(values[5][3:].replace(",", "."))
-            old_profit = float(values[6][3:].replace(",", "."))
+            old_total_value = float(values[5][3:].replace(",", "."))  # Current total value
+            old_profit = float(values[6][3:].replace(",", "."))  # Current profit
 
-            values[3] = f"R$ {new_value:.2f}"
+            values[3] = f"R$ {new_value:.2f}"  # Ensure the new value is formatted with "R$"
 
             total_value = new_value * 12
             values[4] = f"R$ {total_value:.2f}"  # Update Valor por Duzia based on new unit price
             new_total_value = total_value * quantity
-            values[5] = f"R$ {new_total_value:.2f}"
+            values[5] = f"R$ {new_total_value:.2f}"  # Ensure total value is formatted with "R$"
 
             lucro_total = old_profit + (new_total_value - old_total_value)
-            lucro_total = max(lucro_total, 0)
-
-            values[6] = f"R$ {lucro_total:.2f}"
+            values[6] = f"R$ {lucro_total:.2f}"  # Ensure lucro total is formatted with "R$"
 
         elif column_index == 4:  # Valor por Duzia
-            old_total_value = float(values[5][3:].replace(",", "."))
-            old_profit = float(values[6][3:].replace(",", "."))
+            old_total_value = float(values[5][3:].replace(",", "."))  # Current total value
+            old_profit = float(values[6][3:].replace(",", "."))  # Current profit
 
-            values[4] = f"{new_value:.2f}"  # No "R$" for DUZIA
-            
+            values[4] = f"R$ {new_value:.2f}"  # Ensure the new value is formatted with "R$"
+
             # Update total value based on new price per dozen
             vlr_per_unit = new_value / 12
             total_value = new_value * quantity  # Assuming 12 units in a dozen
             new_total_value = total_value
             lucro_total = old_profit + (new_total_value - old_total_value)
-            values[5] = f"R$ {total_value:.2f}"
-            values[3] = f"R$ {vlr_per_unit:.2f}"  # Keep "R$" for unit price
-            values[6] = f"R$ {lucro_total:.2f}"
+            values[5] = f"R$ {new_total_value:.2f}"  # Ensure total value is formatted with "R$"
+            values[3] = f"R$ {vlr_per_unit:.2f}"  # Ensure price per unit is formatted with "R$"
+            values[6] = f"R$ {lucro_total:.2f}"  # Ensure lucro total is formatted with "R$"
 
         return values
 
@@ -2611,27 +2752,27 @@ class ReportsTab(ttk.Frame):
 
         # Cabeçalhos
         pdf.ln(10)  # Linha em branco
-        pdf.cell(75, 15, "Produto", border=1, align="C")
+        pdf.cell(95, 15, "Produto", border=1, align="C")
         pdf.cell(15, 15, "Qtd", border=1, align="C")
         pdf.cell(25, 15, "UN COM.", border=1, align="C")  # Adicionando coluna UN COM.
-        pdf.cell(60, 15, "Valor Total", border=1, align="C")
-        pdf.cell(50, 15, "Lucro Total", border=1, align="C")
-        pdf.cell(80, 15, "Cliente", border=1, align="C")
+        pdf.cell(40, 15, "Valor Total", border=1, align="C")
+        pdf.cell(30, 15, "Lucro Total", border=1, align="C")
+        pdf.cell(120, 15, "Cliente", border=1, align="C")
         pdf.cell(50, 15, "Data", border=1, align="C")
-        pdf.cell(60, 15, "Volume Total (m³)", border=1, align="C")
+        pdf.cell(40, 15, "Volume Total (m³)", border=1, align="C")
         pdf.ln(15)  # Nova linha para os dados
 
         # Adicionar dados da tabela no PDF
         for item in self.report_table.get_children():
             values = self.report_table.item(item)["values"]
-            pdf.cell(75, 15, values[0], border=1, align="C")  # Produto
+            pdf.cell(95, 15, values[0], border=1, align="C")  # Produto
             pdf.cell(15, 15, str(values[1]), border=1, align="C")  # Quantidade
             pdf.cell(25, 15, values[2], border=1, align="C")  # UN COM.
-            pdf.cell(60, 15, str(values[3]), border=1, align="C")  # Valor Total
-            pdf.cell(50, 15, str(values[4]), border=1, align="C")  # Lucro Total
-            pdf.cell(80, 15, values[5], border=1, align="C")  # Cliente
+            pdf.cell(40, 15, str(values[3]), border=1, align="C")  # Valor Total
+            pdf.cell(30, 15, str(values[4]), border=1, align="C")  # Lucro Total
+            pdf.cell(120, 15, values[5], border=1, align="C")  # Cliente
             pdf.cell(50, 15, values[6], border=1, align="C")  # Data
-            pdf.cell(60, 15, str(values[7]), border=1, align="C")  # Volume Total
+            pdf.cell(40, 15, str(values[7]), border=1, align="C")  # Volume Total
             pdf.ln(15)
 
         # Salvar o PDF
@@ -3191,9 +3332,5 @@ class InventoryTab(ttk.Frame):
 
 
 if __name__ == "__main__":
-    try:
         app = MainApp()
         app.mainloop()  # Mantém a interface gráfica aberta
-    except Exception as e:
-        print(f"Erro: {e}")
-        input("Pressione Enter para sair...")
